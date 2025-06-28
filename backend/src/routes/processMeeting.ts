@@ -5,7 +5,7 @@ import path from "path";
 import { OpenAI } from "openai";
 import dotenv from "dotenv";
 import { asyncHandler } from "../utils/asyncHandler";
-import { insertMeeting } from "../services/insertMeeting";
+import { insertMeeting } from "../services/insertMeeting"; // <-- this now exists
 import { searchMeetings } from "../services/semanticSearchService";
 
 dotenv.config();
@@ -95,11 +95,10 @@ router.post(
       model: "text-embedding-ada-002",
       input: transcript,
     });
-
     const embedding = embeddingResponse.data[0].embedding;
 
-    // Step 4: Save to DB
-    await insertMeeting({
+    // Step 4: Save to DB and get the meeting ID
+    const meeting_id = await insertMeeting({
       transcript,
       summary,
       decisions,
@@ -110,15 +109,15 @@ router.post(
     // Step 5: Find similar past meetings
     const similarMeetings = await searchMeetings(embedding);
 
-    // Step 6: Return structured response (excluding raw embedding)
+    // Step 6: Return everything to frontend
     res.json({
       transcript,
       summary,
       decisions,
       action_items,
       similar_meetings: similarMeetings.map(({ embedding, ...rest }) => rest),
+      meeting_id, // ✅ frontend needs this for DALL·E!
     });
-    
   })
 );
 

@@ -1,9 +1,8 @@
-// services/insertMeeting.ts
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // Use service role for insert
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 export async function insertMeeting({
@@ -22,16 +21,13 @@ export async function insertMeeting({
     deadline: string;
   }[];
   embedding: number[];
-}) {
-  const { error } = await supabase.from("meetings").insert([
-    {
-      transcript,
-      summary,
-      decisions,
-      action_items,
-      embedding,
-    },
-  ]);
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from("meetings")
+    .insert([{ transcript, summary, decisions, action_items, embedding }])
+    .select()
+    .single();
 
   if (error) throw new Error("Error inserting into Supabase: " + error.message);
+  return data.id;
 }
