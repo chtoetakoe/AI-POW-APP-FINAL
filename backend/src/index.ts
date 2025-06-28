@@ -3,6 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import transcribeRoute from "./routes/transcribe"; //  Import your route
 import summarizeRoute from "./routes/summarize";
+import processMeetingRoute from "./routes/processMeeting";
+
 
 
 dotenv.config();
@@ -15,6 +17,9 @@ app.use(express.json());
 app.use("/api/transcribe", transcribeRoute);
 
 app.use("/api/summarize", summarizeRoute);
+
+app.use("/api/process-meeting", processMeetingRoute);
+
 
 
 // Optional: Test route
