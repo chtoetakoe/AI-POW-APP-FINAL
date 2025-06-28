@@ -1,8 +1,6 @@
 import { useState } from "react";
 import FileUpload from "./components/FileUpload";
 import MeetingResults from "./components/MeetingResults";
-import SimilarMeetings from "./components/SimilarMeetings";
-import SemanticSearch from "./components/SemanticSearch";
 import GenerateVisual from "./components/GenerateVisual";
 import TranslateToGeorgian from "./components/TranslateToGeorgian";
 
@@ -25,17 +23,17 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 px-4 py-8">
-      <div className="max-w-3xl mx-auto space-y-10">
+      <div className="max-w-4xl mx-auto space-y-10">
         {/* Header */}
         <header className="text-center space-y-2">
-          <h1 className="text-4xl font-bold text-indigo-700">🧠 AI Meeting Assistant</h1>
+          <h1 className="text-4xl font-bold text-indigo-700">AI Meeting Assistant</h1>
           <p className="text-lg text-gray-600">
             Upload your meeting audio and get instant summaries, decisions, visuals, and more.
           </p>
         </header>
 
         {/* Upload Section */}
-        <section className="bg-white shadow-lg rounded-xl p-6">
+        <section className="bg-white shadow-lg rounded-xl p-6 flex justify-center">
           <FileUpload onSuccess={setResults} />
         </section>
 
@@ -49,15 +47,9 @@ function App() {
                 summary={results.summary}
                 decisions={results.decisions}
                 action_items={results.action_items}
+                similar_meetings={results.similar_meetings}
               />
             </section>
-
-            {/* Similar Meetings */}
-            {Array.isArray(results.similar_meetings) && results.similar_meetings.length > 0 && (
-              <section className="bg-white shadow-lg rounded-xl p-6 space-y-4">
-                <SimilarMeetings meetings={results.similar_meetings} />
-              </section>
-            )}
 
             {/* Visual Generation */}
             {results.meeting_id && (
@@ -92,15 +84,7 @@ function App() {
           </div>
         )}
 
-        {/* Semantic Search */}
-        <section className="bg-white shadow-lg rounded-xl p-6 space-y-4">
-          <SemanticSearch />
-        </section>
-
-        {/* Footer */}
-        <footer className="text-center text-sm text-gray-500 pt-10">
-          © {new Date().getFullYear()} AI Meeting Assistant — Built with 💙 by Teona
-        </footer>
+        
       </div>
     </div>
   );
