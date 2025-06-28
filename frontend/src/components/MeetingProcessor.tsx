@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import SimilarMeetings from './SimilarMeetings';
 
 // Define the expected response type
 type MeetingResponse = {
@@ -13,12 +14,18 @@ type MeetingResponse = {
   }[];
 };
 
+type SimilarMeeting = MeetingResponse & {
+  id: string;
+  similarity: number;
+};
+
 const MeetingProcessor: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [transcript, setTranscript] = useState('');
   const [summary, setSummary] = useState('');
   const [decisions, setDecisions] = useState<string[]>([]);
   const [actionItems, setActionItems] = useState<MeetingResponse['action_items']>([]);
+  const [similarMeetings, setSimilarMeetings] = useState<SimilarMeeting[]>([]);
   const [loading, setLoading] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,15 +43,21 @@ const MeetingProcessor: React.FC = () => {
     try {
       setLoading(true);
 
-      const response = await axios.post<MeetingResponse>('http://localhost:3001/api/process-meeting', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
+      const response = await axios.post<MeetingResponse & { similar_meetings?: SimilarMeeting[] }>(
+        'http://localhost:3001/api/process-meeting',
+        formData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        }
+      );
       const data = response.data;
       setTranscript(data.transcript);
       setSummary(data.summary);
       setDecisions(data.decisions || []);
       setActionItems(data.action_items || []);
+      console.log("✅ Similar meetings from backend:", data.similar_meetings);
+      setSimilarMeetings(data.similar_meetings || []);
+      
     } catch (error) {
       console.error('Upload failed:', error);
       alert('Upload failed. See console for details.');
@@ -96,6 +109,13 @@ const MeetingProcessor: React.FC = () => {
               ))}
             </ul>
           </div>
+
+          {similarMeetings.length > 0 && (
+            <div className="mt-6">
+              <h2 className="text-lg font-semibold mb-2">💡 Similar Past Meetings</h2>
+              <SimilarMeetings meetings={similarMeetings} />
+            </div>
+          )}
         </>
       )}
     </div>

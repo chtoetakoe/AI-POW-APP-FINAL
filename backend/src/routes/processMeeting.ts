@@ -6,11 +6,13 @@ import { OpenAI } from "openai";
 import dotenv from "dotenv";
 import { asyncHandler } from "../utils/asyncHandler";
 import { insertMeeting } from "../services/insertMeeting";
+import { searchMeetings } from "../services/semanticSearchService";
 
 dotenv.config();
 const router = express.Router();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// Set up multer to save uploaded audio files
 const storage = multer.diskStorage({
   destination: "uploads/",
   filename: (req, file, cb) => {
@@ -25,19 +27,19 @@ router.post(
   upload.single("audio"),
   asyncHandler(async (req, res) => {
     if (!req.file) {
-      res.status(400).json({ error: "No audio file uploaded." });
-      return;
+      return res.status(400).json({ error: "No audio file uploaded." });
     }
 
     const audioPath = path.join(__dirname, "../../uploads", req.file.filename);
 
+    // Step 1: Transcribe using Whisper
     const transcription = await openai.audio.transcriptions.create({
       file: fs.createReadStream(audioPath),
       model: "whisper-1",
     });
-
     const transcript = transcription.text;
 
+    // Step 2: Extract insights with GPT-4 function calling
     const functions = [
       {
         name: "extract_meeting_insights",
@@ -82,15 +84,13 @@ router.post(
     });
 
     const functionCall = completion.choices[0].message?.function_call;
-    if (!functionCall || !functionCall.arguments) {
-      res.status(500).json({ error: "No structured data returned from GPT-4." });
-      return;
+    if (!functionCall?.arguments) {
+      return res.status(500).json({ error: "No structured data returned from GPT-4." });
     }
 
-    const args = JSON.parse(functionCall.arguments);
-    const { summary, decisions, action_items } = args;
+    const { summary, decisions, action_items } = JSON.parse(functionCall.arguments);
 
-    // ✅ Create embedding
+    // Step 3: Create embedding for semantic search
     const embeddingResponse = await openai.embeddings.create({
       model: "text-embedding-ada-002",
       input: transcript,
@@ -98,7 +98,7 @@ router.post(
 
     const embedding = embeddingResponse.data[0].embedding;
 
-    // ✅ Insert into Supabase
+    // Step 4: Save to DB
     await insertMeeting({
       transcript,
       summary,
@@ -107,12 +107,18 @@ router.post(
       embedding,
     });
 
+    // Step 5: Find similar past meetings
+    const similarMeetings = await searchMeetings(embedding);
+
+    // Step 6: Return structured response (excluding raw embedding)
     res.json({
       transcript,
       summary,
       decisions,
       action_items,
+      similar_meetings: similarMeetings.map(({ embedding, ...rest }) => rest),
     });
+    
   })
 );
 

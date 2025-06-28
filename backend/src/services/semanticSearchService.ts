@@ -21,17 +21,16 @@ export async function getEmbedding(text: string): Promise<number[]> {
 }
 
 // Search Supabase for similar meetings
-export async function searchMeetings(embedding: number[]) {
+export async function searchMeetings(embedding: number[]): Promise<any[]> {
+  const matchThreshold = 0.5;
+  const matchCount = 3;
+
   const { data, error } = await supabase.rpc("match_meetings", {
     query_embedding: embedding,
-    match_threshold: 0.78,
-    match_count: 5,
+    match_threshold: matchThreshold,
+    match_count: matchCount,
   });
 
-  if (error) {
-    console.error("Supabase search error:", error);
-    throw new Error("Failed to search meetings");
-  }
-
+  if (error) throw new Error("Supabase RPC error: " + error.message);
   return data;
 }
