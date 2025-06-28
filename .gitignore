@@ -1,0 +1,23 @@
+# === Common ===
+node_modules/
+dist/
+.env
+.env.local
+uploads/
+*.log
+
+# === Frontend (Vite) ===
+frontend/.vite/
+frontend/.DS_Store
+
+# === Backend ===
+backend/uploads/
+backend/.env
+backend/.DS_Store
+backend/dist/
+
+# === System Files ===
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
