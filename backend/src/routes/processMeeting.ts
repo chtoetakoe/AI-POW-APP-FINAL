@@ -4,81 +4,116 @@ import fs from "fs";
 import path from "path";
 import { OpenAI } from "openai";
 import dotenv from "dotenv";
+import { asyncHandler } from "../utils/asyncHandler";
+import { insertMeeting } from "../services/insertMeeting";
 
 dotenv.config();
 const router = express.Router();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// ✅ Multer setup with file extension preservation
 const storage = multer.diskStorage({
   destination: "uploads/",
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname); // Keep original extension
+    const ext = path.extname(file.originalname);
     cb(null, `${Date.now()}${ext}`);
   },
 });
 const upload = multer({ storage });
 
-router.post("/", upload.single("audio"), async (req, res) => {
-  if (!req.file) {
-    res.status(400).json({ error: "No audio file uploaded." });
-    return;
-  }
+router.post(
+  "/",
+  upload.single("audio"),
+  asyncHandler(async (req, res) => {
+    if (!req.file) {
+      res.status(400).json({ error: "No audio file uploaded." });
+      return;
+    }
 
-  try {
     const audioPath = path.join(__dirname, "../../uploads", req.file.filename);
 
-    console.log("🔍 Reading audio from:", audioPath);
-    console.log("📎 File exists:", fs.existsSync(audioPath));
-    console.log("📎 File mimetype:", req.file.mimetype);
-    console.log("📎 File original name:", req.file.originalname);
-
-    // ✅ Step 1: Transcription
     const transcription = await openai.audio.transcriptions.create({
       file: fs.createReadStream(audioPath),
       model: "whisper-1",
     });
 
     const transcript = transcription.text;
-    console.log("📝 Transcript:", transcript);
 
-    // ✅ Step 2: Summarization
-    const prompt = `
-You are a meeting assistant. Given the following transcript of a business meeting, extract:
-
-1. A clear summary of the meeting
-2. Key decisions made
-3. Action items and assign them to specific people if mentioned
-
-Transcript:
-${transcript}
-
-Respond in JSON with: { "summary": "...", "decisions": [...], "action_items": [...] }
-`;
+    const functions = [
+      {
+        name: "extract_meeting_insights",
+        description: "Extracts summary, decisions, and action items from a meeting transcript.",
+        parameters: {
+          type: "object",
+          properties: {
+            summary: { type: "string" },
+            decisions: { type: "array", items: { type: "string" } },
+            action_items: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  task: { type: "string" },
+                  assignee: { type: "string" },
+                  deadline: { type: "string" },
+                },
+                required: ["task", "assignee", "deadline"],
+              },
+            },
+          },
+          required: ["summary", "decisions", "action_items"],
+        },
+      },
+    ];
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.4,
+      model: "gpt-4-0613",
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful assistant that extracts insights from meeting transcripts.",
+        },
+        {
+          role: "user",
+          content: `Extract a summary, decisions, and action items from this transcript:\n${transcript}`,
+        },
+      ],
+      functions,
+      function_call: { name: "extract_meeting_insights" },
     });
 
-    const result = completion.choices[0].message?.content;
-    if (!result) {
-      res.status(500).json({ error: "No response from GPT-4." });
+    const functionCall = completion.choices[0].message?.function_call;
+    if (!functionCall || !functionCall.arguments) {
+      res.status(500).json({ error: "No structured data returned from GPT-4." });
       return;
     }
 
-    const structured = JSON.parse(result);
+    const args = JSON.parse(functionCall.arguments);
+    const { summary, decisions, action_items } = args;
 
-    // ✅ Final response
+    // ✅ Create embedding
+    const embeddingResponse = await openai.embeddings.create({
+      model: "text-embedding-ada-002",
+      input: transcript,
+    });
+
+    const embedding = embeddingResponse.data[0].embedding;
+
+    // ✅ Insert into Supabase
+    await insertMeeting({
+      transcript,
+      summary,
+      decisions,
+      action_items,
+      embedding,
+    });
+
     res.json({
       transcript,
-      ...structured,
+      summary,
+      decisions,
+      action_items,
     });
-  } catch (error) {
-    console.error("❌ Process Meeting error:", error);
-    res.status(500).json({ error: "Failed to process meeting." });
-  }
-});
+  })
+);
 
 export default router;
