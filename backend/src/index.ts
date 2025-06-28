@@ -6,7 +6,7 @@ import summarizeRoute from "./routes/summarize";
 import processMeetingRoute from "./routes/processMeeting";
 import semanticSearch from "./routes/semanticSearch";
 import generateVisualRoute from "./routes/generateVisual";
-
+import translateRoute from "./routes/translate";
 
 
 
@@ -26,6 +26,8 @@ app.use("/api/process-meeting", processMeetingRoute);
 app.use("/api/semantic-search", semanticSearch);
 
 app.use("/api/generate-visual", generateVisualRoute);
+
+app.use("/api/translate", translateRoute);
 
 // Optional: Test route
 app.get("/", (_req, res) => {

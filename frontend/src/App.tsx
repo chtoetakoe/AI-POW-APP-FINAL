@@ -4,6 +4,7 @@ import MeetingResults from "./components/MeetingResults";
 import SimilarMeetings from "./components/SimilarMeetings";
 import SemanticSearch from "./components/SemanticSearch";
 import GenerateVisual from "./components/GenerateVisual";
+import TranslateToGeorgian from "./components/TranslateToGeorgian";
 
 function App() {
   const [results, setResults] = useState<null | {
@@ -45,10 +46,9 @@ function App() {
               action_items={results.action_items}
             />
 
-{Array.isArray(results.similar_meetings) && results.similar_meetings.length > 0 && (
-  <SimilarMeetings meetings={results.similar_meetings} />
-)}
-
+            {Array.isArray(results.similar_meetings) && results.similar_meetings.length > 0 && (
+              <SimilarMeetings meetings={results.similar_meetings} />
+            )}
 
             {results.meeting_id && (
               <GenerateVisual
@@ -69,6 +69,12 @@ function App() {
                 />
               </div>
             )}
+
+            <TranslateToGeorgian
+              summary={results.summary}
+              decisions={results.decisions}
+              action_items={results.action_items}
+            />
           </div>
         )}
 
