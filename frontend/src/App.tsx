@@ -24,66 +24,84 @@ function App() {
   }>(null);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center flex-col p-6">
-      <header className="text-center mb-10">
-        <h1 className="text-4xl font-extrabold text-indigo-700 drop-shadow-sm">
-          🧠 Meeting Processor
-        </h1>
-        <p className="mt-2 text-gray-600 text-lg">
-          Upload your meeting audio to get structured insights instantly.
-        </p>
-      </header>
+    <div className="min-h-screen bg-gray-50 text-gray-800 px-4 py-8">
+      <div className="max-w-3xl mx-auto space-y-10">
+        {/* Header */}
+        <header className="text-center space-y-2">
+          <h1 className="text-4xl font-bold text-indigo-700">🧠 AI Meeting Assistant</h1>
+          <p className="text-lg text-gray-600">
+            Upload your meeting audio and get instant summaries, decisions, visuals, and more.
+          </p>
+        </header>
 
-      <main className="w-full max-w-2xl">
-        <FileUpload onSuccess={setResults} />
+        {/* Upload Section */}
+        <section className="bg-white shadow-lg rounded-xl p-6">
+          <FileUpload onSuccess={setResults} />
+        </section>
 
+        {/* Results */}
         {results && (
-          <div className="mt-12 space-y-8">
-            <MeetingResults
-              transcript={results.transcript}
-              summary={results.summary}
-              decisions={results.decisions}
-              action_items={results.action_items}
-            />
-
-            {Array.isArray(results.similar_meetings) && results.similar_meetings.length > 0 && (
-              <SimilarMeetings meetings={results.similar_meetings} />
-            )}
-
-            {results.meeting_id && (
-              <GenerateVisual
-                meetingId={results.meeting_id}
-                onImageReady={(url) =>
-                  setResults((prev) => prev && { ...prev, visual_url: url })
-                }
+          <div className="space-y-8">
+            {/* Transcript + Summary + Actions */}
+            <section className="bg-white shadow-lg rounded-xl p-6 space-y-6">
+              <MeetingResults
+                transcript={results.transcript}
+                summary={results.summary}
+                decisions={results.decisions}
+                action_items={results.action_items}
               />
+            </section>
+
+            {/* Similar Meetings */}
+            {Array.isArray(results.similar_meetings) && results.similar_meetings.length > 0 && (
+              <section className="bg-white shadow-lg rounded-xl p-6 space-y-4">
+                <SimilarMeetings meetings={results.similar_meetings} />
+              </section>
             )}
 
-            {results.visual_url && (
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold mb-2">🎨 Visual Summary</h3>
-                <img
-                  src={results.visual_url}
-                  alt="Meeting Visual"
-                  className="rounded shadow-md w-full"
+            {/* Visual Generation */}
+            {results.meeting_id && (
+              <section className="bg-white shadow-lg rounded-xl p-6 space-y-4">
+                <GenerateVisual
+                  meetingId={results.meeting_id}
+                  onImageReady={(url) =>
+                    setResults((prev) => prev && { ...prev, visual_url: url })
+                  }
                 />
-              </div>
+
+                {results.visual_url && (
+                  <div className="mt-4">
+                    <img
+                      src={results.visual_url}
+                      alt="Meeting Visual"
+                      className="rounded-lg shadow border"
+                    />
+                  </div>
+                )}
+              </section>
             )}
 
-            <TranslateToGeorgian
-              summary={results.summary}
-              decisions={results.decisions}
-              action_items={results.action_items}
-            />
+            {/* Georgian Translation */}
+            <section className="bg-white shadow-lg rounded-xl p-6 space-y-4">
+              <TranslateToGeorgian
+                summary={results.summary}
+                decisions={results.decisions}
+                action_items={results.action_items}
+              />
+            </section>
           </div>
         )}
 
-        <SemanticSearch />
-      </main>
+        {/* Semantic Search */}
+        <section className="bg-white shadow-lg rounded-xl p-6 space-y-4">
+          <SemanticSearch />
+        </section>
 
-      <footer className="text-center text-gray-400 text-sm mt-16">
-        © {new Date().getFullYear()} AI Meeting Assistant – Built with 💙
-      </footer>
+        {/* Footer */}
+        <footer className="text-center text-sm text-gray-500 pt-10">
+          © {new Date().getFullYear()} AI Meeting Assistant — Built with 💙 by Teona
+        </footer>
+      </div>
     </div>
   );
 }
