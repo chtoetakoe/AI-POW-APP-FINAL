@@ -38,42 +38,71 @@ const MeetingResults: React.FC<Props> = ({
   const [active, setActive] = useState<Tab>("Transcript");
   const [visualUrl, setVisualUrl] = useState(visual_url ?? "");
 
+  
+
   const content = () => {
     switch (active) {
       case "Transcript":
-        return <p className="whitespace-pre-line">{transcript}</p>;
+        return (
+          <>
+            
+            <p className="whitespace-pre-line">{transcript}</p>
+          </>
+        );
       case "Summary":
-        return <p>{summary}</p>;
+        return (
+          <>
+           
+            <p>{summary}</p>
+          </>
+        );
       case "Decisions":
         return (
-          <ul className="list-disc pl-6 space-y-1">
-            {decisions.map((d, i) => (
-              <li key={i}>{d}</li>
-            ))}
-          </ul>
+          <>
+            
+            <ul className="list-disc pl-6 space-y-1">
+              {decisions.map((d, i) => (
+                <li key={i}>{d}</li>
+              ))}
+            </ul>
+          </>
         );
       case "Action Items":
         return (
-          <ul className="list-disc pl-6 space-y-1">
-            {action_items.map((a, i) => (
-              <li key={i}>
-                {a.task} – <strong>{a.assignee || "Unassigned"}</strong>, deadline:{" "}
-                <strong>{a.deadline || "None"}</strong>
-              </li>
-            ))}
-          </ul>
+          <>
+            
+            <ul className="list-disc pl-6 space-y-1">
+              {action_items.map((a, i) => (
+                <li key={i}>
+                  {a.task} – <strong>{a.assignee || "Unassigned"}</strong>, deadline:{" "}
+                  <strong>{a.deadline || "None"}</strong>
+                </li>
+              ))}
+            </ul>
+          </>
         );
       case "Similar Meetings":
-        return similar_meetings.length ? (
-          <SimilarMeetings meetings={similar_meetings} />
-        ) : (
-          <p className="text-sm text-gray-500">No similar meetings found.</p>
+        return (
+          <>
+            
+            {similar_meetings.length ? (
+              <SimilarMeetings meetings={similar_meetings} />
+            ) : (
+              <p className="text-sm text-gray-500">No similar meetings found.</p>
+            )}
+          </>
         );
       case "Search Past Meetings":
-        return <SemanticSearch />;
+        return (
+          <>
+            
+            <SemanticSearch />
+          </>
+        );
       case "Visual Summary":
         return meeting_id ? (
           <>
+            
             <GenerateVisual meetingId={meeting_id} onImageReady={setVisualUrl} />
             {visualUrl && (
               <img
@@ -88,11 +117,14 @@ const MeetingResults: React.FC<Props> = ({
         );
       case "Georgian Translation":
         return (
-          <TranslateToGeorgian
-            summary={summary}
-            decisions={decisions}
-            action_items={action_items}
-          />
+          <>
+            
+            <TranslateToGeorgian
+              summary={summary}
+              decisions={decisions}
+              action_items={action_items}
+            />
+          </>
         );
       default:
         return null;

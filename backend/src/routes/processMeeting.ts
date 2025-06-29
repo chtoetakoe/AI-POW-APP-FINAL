@@ -5,7 +5,7 @@ import path from "path";
 import { OpenAI } from "openai";
 import dotenv from "dotenv";
 import { asyncHandler } from "../utils/asyncHandler";
-import { insertMeeting } from "../services/insertMeeting"; // <-- this now exists
+import { insertMeeting } from "../services/insertMeeting";
 import { searchMeetings } from "../services/semanticSearchService";
 
 dotenv.config();
@@ -32,14 +32,18 @@ router.post(
 
     const audioPath = path.join(__dirname, "../../uploads", req.file.filename);
 
-    // Step 1: Transcribe using Whisper
+    // 🕒 Step 1: Transcribe using Whisper
+    console.time("⏱ Transcription");
     const transcription = await openai.audio.transcriptions.create({
       file: fs.createReadStream(audioPath),
       model: "whisper-1",
     });
+    console.timeEnd("⏱ Transcription");
+
     const transcript = transcription.text;
 
-    // Step 2: Extract insights with GPT-4 function calling
+    // 🕒 Step 2: Extract insights with GPT-4 function calling
+    console.time("⏱ GPT Insight Extraction");
     const functions = [
       {
         name: "extract_meeting_insights",
@@ -82,6 +86,7 @@ router.post(
       functions,
       function_call: { name: "extract_meeting_insights" },
     });
+    console.timeEnd("⏱ GPT Insight Extraction");
 
     const functionCall = completion.choices[0].message?.function_call;
     if (!functionCall?.arguments) {
@@ -90,14 +95,18 @@ router.post(
 
     const { summary, decisions, action_items } = JSON.parse(functionCall.arguments);
 
-    // Step 3: Create embedding for semantic search
+    // 🕒 Step 3: Create embedding for semantic search
+    console.time("⏱ Embedding");
     const embeddingResponse = await openai.embeddings.create({
       model: "text-embedding-ada-002",
       input: transcript,
     });
+    console.timeEnd("⏱ Embedding");
+
     const embedding = embeddingResponse.data[0].embedding;
 
-    // Step 4: Save to DB and get the meeting ID
+    // 🕒 Step 4: Save to DB
+    console.time("⏱ Supabase Insert");
     const meeting_id = await insertMeeting({
       transcript,
       summary,
@@ -105,18 +114,21 @@ router.post(
       action_items,
       embedding,
     });
+    console.timeEnd("⏱ Supabase Insert");
 
-    // Step 5: Find similar past meetings
+    // 🕒 Step 5: Find similar past meetings
+    console.time("⏱ Semantic Search");
     const similarMeetings = await searchMeetings(embedding);
+    console.timeEnd("⏱ Semantic Search");
 
-    // Step 6: Return everything to frontend
+    // 🟢 Step 6: Return everything to frontend
     res.json({
       transcript,
       summary,
       decisions,
       action_items,
       similar_meetings: similarMeetings.map(({ embedding, ...rest }) => rest),
-      meeting_id, // ✅ frontend needs this for DALL·E!
+      meeting_id,
     });
   })
 );

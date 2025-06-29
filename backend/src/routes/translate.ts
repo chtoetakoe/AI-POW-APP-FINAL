@@ -13,8 +13,7 @@ router.post(
     const { summary, decisions, action_items } = req.body;
 
     const prompt = `
-Translate the following meeting summary, decisions, and action items into **formal Georgian**. Return the output clearly formatted.
-
+You are a professional Georgian translator. Translate the following meeting content into **clear, formal, and natural-sounding Georgian**, using appropriate business terminology. Avoid literal translations — aim for polished and fluent phrasing that would be used in professional communication in Georgia.
 Summary:
 ${summary}
 
