@@ -1,19 +1,17 @@
 import React, { useState } from "react";
 import SimilarMeetings from "./SimilarMeetings";
 import SemanticSearch from "./SemanticSearch";
+import GenerateVisual from "./GenerateVisual";
+import TranslateToGeorgian from "./TranslateToGeorgian";
 
 interface Props {
   transcript: string;
   summary: string;
   decisions: string[];
   action_items: { task: string; assignee?: string; deadline?: string }[];
-  similar_meetings?: {
-    id: string;
-    transcript: string;
-    summary: string;
-    decisions: string[];
-    action_items: { task: string; assignee?: string; deadline?: string }[];
-  }[];
+  similar_meetings?: any[];
+  meeting_id?: string;
+  visual_url?: string;
 }
 
 const TABS = [
@@ -23,6 +21,8 @@ const TABS = [
   "Action Items",
   "Similar Meetings",
   "Search Past Meetings",
+  "Visual Summary",
+  "Georgian Translation",
 ] as const;
 type Tab = (typeof TABS)[number];
 
@@ -32,11 +32,14 @@ const MeetingResults: React.FC<Props> = ({
   decisions,
   action_items,
   similar_meetings = [],
+  meeting_id,
+  visual_url,
 }) => {
-  const [activeTab, setActiveTab] = useState<Tab>("Transcript");
+  const [active, setActive] = useState<Tab>("Transcript");
+  const [visualUrl, setVisualUrl] = useState(visual_url ?? "");
 
-  const renderContent = () => {
-    switch (activeTab) {
+  const content = () => {
+    switch (active) {
       case "Transcript":
         return <p className="whitespace-pre-line">{transcript}</p>;
       case "Summary":
@@ -52,23 +55,45 @@ const MeetingResults: React.FC<Props> = ({
       case "Action Items":
         return (
           <ul className="list-disc pl-6 space-y-1">
-            {action_items.map((item, i) => (
+            {action_items.map((a, i) => (
               <li key={i}>
-                {item.task} –{" "}
-                <strong>{item.assignee || "Unassigned"}</strong>, Deadline:{" "}
-                <strong>{item.deadline || "None"}</strong>
+                {a.task} – <strong>{a.assignee || "Unassigned"}</strong>, deadline:{" "}
+                <strong>{a.deadline || "None"}</strong>
               </li>
             ))}
           </ul>
         );
       case "Similar Meetings":
-        return similar_meetings.length > 0 ? (
+        return similar_meetings.length ? (
           <SimilarMeetings meetings={similar_meetings} />
         ) : (
           <p className="text-sm text-gray-500">No similar meetings found.</p>
         );
       case "Search Past Meetings":
         return <SemanticSearch />;
+      case "Visual Summary":
+        return meeting_id ? (
+          <>
+            <GenerateVisual meetingId={meeting_id} onImageReady={setVisualUrl} />
+            {visualUrl && (
+              <img
+                src={visualUrl}
+                alt="Visual summary"
+                className="mt-4 rounded shadow"
+              />
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-gray-500">Upload audio to enable this.</p>
+        );
+      case "Georgian Translation":
+        return (
+          <TranslateToGeorgian
+            summary={summary}
+            decisions={decisions}
+            action_items={action_items}
+          />
+        );
       default:
         return null;
     }
@@ -76,26 +101,23 @@ const MeetingResults: React.FC<Props> = ({
 
   return (
     <div className="w-full max-w-3xl mx-auto">
-      {/* Tabs */}
       <div className="flex border-b border-gray-300 overflow-x-auto">
         {TABS.map((tab) => (
           <button
             key={tab}
-            className={`py-2 px-4 text-sm font-medium whitespace-nowrap focus:outline-none transition-all duration-200 ${
-              activeTab === tab
+            className={`py-2 px-4 text-sm font-medium whitespace-nowrap transition
+              ${active === tab
                 ? "text-indigo-600 border-b-2 border-indigo-600"
-                : "text-gray-500 hover:text-indigo-500"
-            }`}
-            onClick={() => setActiveTab(tab)}
+                : "text-gray-500 hover:text-indigo-500"}`}
+            onClick={() => setActive(tab)}
           >
             {tab}
           </button>
         ))}
       </div>
 
-      {/* Tab Content */}
       <div className="bg-white shadow-md rounded-b-xl p-6 text-gray-700">
-        {renderContent()}
+        {content()}
       </div>
     </div>
   );

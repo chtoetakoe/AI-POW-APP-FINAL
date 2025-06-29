@@ -1,25 +1,26 @@
 import { useState } from "react";
 import FileUpload from "./components/FileUpload";
 import MeetingResults from "./components/MeetingResults";
-import GenerateVisual from "./components/GenerateVisual";
-import TranslateToGeorgian from "./components/TranslateToGeorgian";
 
 function App() {
-  const [results, setResults] = useState<null | {
-    transcript: string;
-    summary: string;
-    decisions: string[];
-    action_items: { task: string; assignee?: string; deadline?: string }[];
-    similar_meetings?: {
-      id: string;
-      transcript: string;
-      summary: string;
-      decisions: string[];
-      action_items: { task: string; assignee?: string; deadline?: string }[];
-    }[];
-    meeting_id?: string;
-    visual_url?: string;
-  }>(null);
+  const [results, setResults] = useState<
+    | null
+    | {
+        transcript: string;
+        summary: string;
+        decisions: string[];
+        action_items: { task: string; assignee?: string; deadline?: string }[];
+        similar_meetings?: {
+          id: string;
+          transcript: string;
+          summary: string;
+          decisions: string[];
+          action_items: { task: string; assignee?: string; deadline?: string }[];
+        }[];
+        meeting_id?: string;
+        visual_url?: string;
+      }
+  >(null);
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 px-4 py-8">
@@ -39,52 +40,18 @@ function App() {
 
         {/* Results */}
         {results && (
-          <div className="space-y-8">
-            {/* Transcript + Summary + Actions */}
-            <section className="bg-white shadow-lg rounded-xl p-6 space-y-6">
-              <MeetingResults
-                transcript={results.transcript}
-                summary={results.summary}
-                decisions={results.decisions}
-                action_items={results.action_items}
-                similar_meetings={results.similar_meetings}
-              />
-            </section>
-
-            {/* Visual Generation */}
-            {results.meeting_id && (
-              <section className="bg-white shadow-lg rounded-xl p-6 space-y-4">
-                <GenerateVisual
-                  meetingId={results.meeting_id}
-                  onImageReady={(url) =>
-                    setResults((prev) => prev && { ...prev, visual_url: url })
-                  }
-                />
-
-                {results.visual_url && (
-                  <div className="mt-4">
-                    <img
-                      src={results.visual_url}
-                      alt="Meeting Visual"
-                      className="rounded-lg shadow border"
-                    />
-                  </div>
-                )}
-              </section>
-            )}
-
-            {/* Georgian Translation */}
-            <section className="bg-white shadow-lg rounded-xl p-6 space-y-4">
-              <TranslateToGeorgian
-                summary={results.summary}
-                decisions={results.decisions}
-                action_items={results.action_items}
-              />
-            </section>
-          </div>
+          <section className="bg-white shadow-lg rounded-xl p-6 space-y-6">
+            <MeetingResults
+              transcript={results.transcript}
+              summary={results.summary}
+              decisions={results.decisions}
+              action_items={results.action_items}
+              similar_meetings={results.similar_meetings}
+              meeting_id={results.meeting_id}
+              visual_url={results.visual_url}
+            />
+          </section>
         )}
-
-        
       </div>
     </div>
   );
