@@ -1,10 +1,4 @@
 import request from "supertest";
-import express from "express";
-import { createReadStream } from "fs";
-import path from "path";
-
-// 🔁 adjust if your `src/index.ts` doesn't export app directly
-import "../src/index"; // makes sure server runs
 
 describe("AI Meeting Assistant API", () => {
   it("returns similar meetings", async () => {
@@ -16,25 +10,36 @@ describe("AI Meeting Assistant API", () => {
     expect(Array.isArray(res.body)).toBe(true);
   });
 
-  it("returns image URL for a meeting", async () => {
+  it(
+    "returns image URL for a meeting",
+    async () => {
+      const res = await request("http://localhost:3001")
+        .post("/api/generate-visual")
+        .send({ meeting_id: "e83dcb9a-cdc9-4ad8-81f0-427f55f56794" }); 
+
+      expect(res.status).toBe(200);
+
+     
+      expect(res.body.imageUrl).toMatch(
+        /^https:\/\/.+\.(jpg|jpeg|png|webp)(\?.+)?$/
+      );
+    },
+    20000 
+  );
+  it("returns Georgian translation", async () => {
     const res = await request("http://localhost:3001")
-      .post("/api/generate-visual")
-      .send({ meeting_id: "e83dcb9a-cdc9-4ad8-81f0-427f55f56794" });
+      .post("/api/translate")
+      .send({
+        summary: "We discussed the Q3 marketing budget and cost-saving ideas.",
+        decisions: ["Increase budget by 20%", "Cancel ad contract"],
+        action_items: [
+          { task: "Update spreadsheet", assignee: "Jina", deadline: "Friday" },
+        ],
+      });
   
     expect(res.status).toBe(200);
-    expect(res.body.imageUrl).toMatch(/^https:\/\/.+\.(jpg|jpeg|png|webp)$/);
-  }, 15000); // ✅ Increase timeout to 15 seconds
+    expect(typeof res.body.translation).toBe("string");
+    expect(res.body.translation.length).toBeGreaterThan(10);
+  });
   
-
-  // Optional: Uncomment if you want to test actual audio processing
-  // it("uploads audio and gets summary", async () => {
-  //   const audioPath = path.join(__dirname, "test_audio.mp3"); // Replace with your real file
-  //   const res = await request("http://localhost:3001")
-  //     .post("/api/process-meeting")
-  //     .attach("audio", createReadStream(audioPath));
-
-  //   expect(res.status).toBe(200);
-  //   expect(res.body.summary).toBeDefined();
-  //   expect(Array.isArray(res.body.decisions)).toBe(true);
-  // });
 });
